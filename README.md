@@ -1,64 +1,35 @@
-# zk-credit-dev1
+# Midnight ZK Credit Score App
 
-AI prompt and signature logic for the ZK-Credit Scorer on the Midnight blockchain.
+A privacy-preserving credit score application built on the **Midnight Network** using Zero-Knowledge proofs.
 
-## What this does
+## Features
 
-1. Sends 6 months of mock financial data to **Gemini 1.5 Flash**, which returns a structured credit score JSON.
-2. Signs the JSON with an **RSA-2048 private key** (SHA256) to produce a tamper-proof credential.
-3. Packages the result into three output sections consumed by the rest of the ZK pipeline:
-   - **for_compact_contract** — inputs for the Midnight Compact smart contract (Dev 2)
-   - **public_state** — on-chain visible data (Dev 3 / frontend)
-   - **private_state** — kept in the ZK proof, never revealed on-chain (Dev 3)
+- **ZK Proof Generation**: Prove your credit score is above a threshold without revealing underlying financial data.
+- **1am-wallet Integration**: Seamlessly connect to the Midnight network using the browser wallet.
+- **PDF Bill Parsing**: Upload utility bills in PDF form for local evidence verification.
+- **AI-Enhanced Analysis**: Optional server-side analysis of credit data (using GROQ) for improved scoring models.
+- **Privacy First**: Raw data stays on your machine. Only succinct proofs are transmitted to the blockchain.
+
+## Technical Stack
+
+- **Frontend**: React, Tailwind CSS, Motion
+- **Blockchain**: Midnight Network (Compact Runtime)
+- **Wallet**: 1am-wallet
+- **AI**: GROQ-compatible inference (Server-side)
+
+## Development Mode
+
+If the **1am-wallet** extension is not detected, the app automatically falls back to **Demo Mode**.
+- Proof generation is simulated.
+- Transaction submission is mocked with realistic network delays.
+- Visualizations show the difference between "Local View" and "Blockchain View".
 
 ## Setup
 
-```bash
-npm install
-```
+1. Install dependencies: `npm install`
+2. Configure environmental variables (see `.env.example`)
+3. Start the dev server: `npm run dev`
 
-Add your Gemini API key to `.env`:
+---
 
-```
-GEMINI_API_KEY=your_actual_key_here
-```
-
-## Running
-
-| Command | What it does |
-|---------|-------------|
-| `npm test` | Runs the full test suite — **no API key needed** |
-| `npm start` | Runs the full pipeline with a live Gemini API call |
-
-## Output files
-
-| File | Description |
-|------|-------------|
-| `output.json` | Main output: three sections for Compact contract, public state, private state |
-| `verifiable_credential.json` | Full VC object with proof, for Dev 3 |
-| `mock_bank_private.pem` | RSA private key — **never share** |
-| `mock_bank_public.pem` | RSA public key — share with Dev 2 and Dev 3 |
-| `test_output.json` | Test run artifacts |
-
-## Handoff
-
-**→ Dev 2 (Compact contract on Midnight):**
-- `output.json` → use the `for_compact_contract` section
-- `mock_bank_public.pem` → for on-chain signature verification
-
-**→ Dev 3 (ZK proof / frontend):**
-- `output.json` → all three sections
-- `verifiable_credential.json` → full VC with proof
-
-## CRITICAL: JSON serialization rule
-
-The signature is always computed over:
-
-```js
-JSON.stringify(scoreData)   // compact, no spaces, no formatting
-```
-
-**Never reformat this string before passing it to the Compact contract.**  
-Any whitespace change will invalidate the signature and break ZK proof verification.
-
-The `signed_payload` field in `output.json` and `verifiable_credential.json` contains the exact string that was signed — use it as-is.
+*Note: This is a prototype showcasing the integration flow between Midnight and 1am-wallet.*
