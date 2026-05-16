@@ -3,7 +3,7 @@ import { WalletConnect } from './components/WalletConnect';
 import { ScoreFlow } from './components/ScoreFlow';
 import { PrivacyView } from './components/PrivacyView';
 import { ExtractedDataView } from './components/ExtractedDataView';
-import { Shield, Lock, Fingerprint, Database, Info } from 'lucide-react';
+import { Shield, Lock, Fingerprint, Database } from 'lucide-react';
 import { useWallet } from './hooks/useWallet';
 import type { FinancialData } from './types';
 
@@ -45,7 +45,7 @@ export default function App() {
           <FeatureCard
             icon={<Lock className="w-5 h-5" />}
             title="Encrypted Locally"
-            description="Your financial data is processed on your machine. We never see your bank details."
+            description="Your PDF is analyzed by Groq AI in real time and immediately discarded. No bank details are stored or sent to any database. Only your verified score touches the blockchain."
           />
           <FeatureCard
             icon={<Fingerprint className="w-5 h-5" />}
@@ -59,22 +59,6 @@ export default function App() {
           />
         </div>
 
-        <div className="mt-24 px-6">
-          <div className="p-6 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-start gap-4">
-            <div className="p-3 rounded-xl bg-zinc-800">
-              <Info className="w-5 h-5 text-zinc-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-semibold text-white mb-1">Integration Status</h4>
-              <p className="text-xs text-zinc-500 leading-relaxed">
-                Wallet connection uses the real <span className="text-white font-mono">Lace</span> browser extension via{' '}
-                <span className="text-white font-mono">window.midnight.mnLace</span>. ZK proof submission requires the
-                Compact contract from Dev 2 — see{' '}
-                <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-300">integration.md</code>.
-              </p>
-            </div>
-          </div>
-        </div>
       </main>
 
       <footer className="p-8 border-t border-zinc-900 text-center">

@@ -69,7 +69,7 @@ async function startServer() {
         messages: [
           {
             role: "system",
-            content: "You are a bank statement parser. Extract all financial data and return ONLY raw JSON. No markdown, no explanation.",
+            content: "You are a bank statement parser. Extract all financial data and return ONLY raw JSON. No markdown, no explanation. Always fill every field — never leave a field as null or empty unless the document truly contains no relevant information.",
           },
           {
             role: "user",
@@ -79,8 +79,8 @@ async function startServer() {
                 type: "text",
                 text: `Extract all financial data from this bank statement and return exactly this JSON structure (compute all values from what you see — no placeholders):
 {
-  "user_id": "<account number from statement>",
-  "bank": "<bank name>",
+  "user_id": "<account number shown on the statement>",
+  "bank": "<name of the bank or financial institution — look at the letterhead, logo text, or header at the very top of the first page; if the word SAMPLE appears, still read the institution name beneath it>",
   "currency": "<currency code, e.g. USD>",
   "account_holder": "<full name on statement>",
   "period": "<statement period, e.g. Oct 2024 - Nov 2024>",
