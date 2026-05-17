@@ -1,6 +1,0 @@
-{
-  "name": "Midnight Private Credit Score",
-  "description": "A privacy-preserving credit score application using Midnight ZK-proofs and 1am-wallet.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GROQ_API"]
-}

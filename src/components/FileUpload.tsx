@@ -53,7 +53,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
         className={`border-2 border-dashed rounded-xl p-6 transition-all cursor-pointer text-center ${
-          isDragging ? 'border-indigo-500 bg-indigo-500/10' : 'border-zinc-800 bg-zinc-900/20 hover:border-zinc-700'
+          isDragging ? 'border-teal-500 bg-teal-500/10' : 'border-zinc-800 bg-zinc-900/20 hover:border-zinc-700'
         }`}
       >
         <input
@@ -64,11 +64,11 @@ export function FileUpload({ onUpload }: FileUploadProps) {
           accept=".pdf"
           multiple
         />
-        <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragging ? 'text-indigo-400' : 'text-zinc-600'}`} />
+        <Upload className={`w-8 h-8 mx-auto mb-2 ${isDragging ? 'text-teal-400' : 'text-zinc-600'}`} />
         <p className="text-xs text-zinc-400">
-          <span className="text-indigo-400 font-bold">Click to upload</span> or drag and drop PDFs
+          <span className="text-teal-400 font-bold">Click to upload</span> or drag and drop PDFs
         </p>
-        <p className="text-[10px] text-zinc-600 mt-1 uppercase tracking-tighter">Utility Bills, Bank Statements</p>
+        <p className="text-[10px] text-zinc-600 mt-1 uppercase tracking-tighter">MEDICAL RECORDS, LAB RESULTS</p>
       </div>
 
       {files.length > 0 && (
@@ -76,7 +76,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
           {files.map((file, index) => (
             <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-zinc-900 border border-zinc-800 group">
               <div className="flex items-center gap-3 overflow-hidden">
-                <File className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                <File className="w-4 h-4 text-teal-400 flex-shrink-0" />
                 <span className="text-[11px] text-zinc-300 truncate font-mono">{file.name}</span>
               </div>
               <div className="flex items-center gap-2">

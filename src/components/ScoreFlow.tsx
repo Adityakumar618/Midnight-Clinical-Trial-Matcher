@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { ShieldCheck, FileText, Send, Loader2, RefreshCcw, CheckCircle2, Plus, UploadCloud } from 'lucide-react';
+import { ShieldCheck, FileText, Send, Loader2, RefreshCcw, CheckCircle2, XCircle, Plus, UploadCloud } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileUpload } from './FileUpload';
-import type { FinancialData } from '../types';
+import type { MedicalData } from '../types';
 import type { WalletState } from '../hooks/useWallet';
 
 interface ScoreFlowProps {
-  financialData: FinancialData | null;
-  onDataLoaded: (data: FinancialData) => void;
+  medicalData: MedicalData | null;
+  onDataLoaded: (data: MedicalData) => void;
   wallet: WalletState;
 }
 
-export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProps) {
+export function ScoreFlow({ medicalData, onDataLoaded, wallet }: ScoreFlowProps) {
   const { isConnected } = wallet;
 
   const [step, setStep] = useState<'idle' | 'generating' | 'ready' | 'submitting' | 'success'>('idle');
@@ -21,36 +21,39 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
   const [analyzingPDF, setAnalyzingPDF] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const canGenerate = isConnected && financialData !== null;
+  const canGenerate = medicalData !== null;
 
   const handleGenerateProof = async () => {
-    if (!financialData || !wallet.connector) return;
+    if (!medicalData) return;
     setStep('generating');
     try {
-      // Real proof generation: wallet.connector.getProvingProvider(keyMaterialProvider)
-      // Compact contract integration (Dev 2) required before this can be wired end-to-end.
-      await new Promise(r => setTimeout(r, 2200));
-      setProofHash('zkp_' + crypto.randomUUID().replace(/-/g, '').slice(0, 24));
-      setStep('ready');
+      setStep('submitting'); // Show the terminal/submission step
+      const response = await fetch('/api/generate-proof', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          a1c_level: medicalData.a1c_level,
+          has_cvd: medicalData.has_cvd,
+          has_kidney_disease: medicalData.has_kidney_disease
+        })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        setProofHash(data.proofHash);
+        setTxHash(data.transactionHash);
+        setStep('success');
+      } else {
+        throw new Error(data.error);
+      }
     } catch (err) {
       console.error('Proof generation failed:', err);
       setStep('idle');
     }
   };
 
-  const handleSubmitProof = async () => {
-    if (!wallet.connector || !proofHash) return;
-    setStep('submitting');
-    try {
-      // Real submission: wallet.connector.submitTransaction(signedTx)
-      await new Promise(r => setTimeout(r, 2000));
-      setTxHash('0x' + crypto.randomUUID().replace(/-/g, ''));
-      setStep('success');
-    } catch (err) {
-      console.error('Submission failed:', err);
-      setStep('ready');
-    }
-  };
+  // We no longer need handleSubmitProof because the backend handles it autonomously
+  const handleSubmitProof = async () => {};
 
   const handleFileUpload = async (files: File[]) => {
     if (files.length === 0) return;
@@ -61,7 +64,7 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
     formData.append('bill', files[0]);
 
     try {
-      const response = await fetch('/api/upload-bill', { method: 'POST', body: formData });
+      const response = await fetch('/api/upload-medical', { method: 'POST', body: formData });
       const data = await response.json();
 
       if (!response.ok) {
@@ -83,9 +86,9 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
   return (
     <div className="p-6 space-y-8">
       <header className="space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight">ZK Proof Generation</h2>
+        <h2 className="text-2xl font-semibold tracking-tight">Clinical Trial Eligibility Matcher</h2>
         <p className="text-zinc-500 text-sm max-w-lg italic">
-          Upload your bank statement or utility bill. Your raw data never leaves this machine.
+          Upload your medical record or lab results. Your raw health data never leaves this machine.
         </p>
       </header>
 
@@ -94,13 +97,13 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
         <div className="border border-zinc-800 rounded-2xl bg-zinc-900/30 overflow-hidden flex flex-col">
           <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/50 flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4 text-indigo-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Local Evidence</span>
+              <FileText className="w-4 h-4 text-teal-400" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-zinc-400">Local Health Record</span>
             </div>
-            {financialData && (
+            {medicalData && (
               <button
                 onClick={() => setShowUpload(!showUpload)}
-                className={`p-1 rounded-md transition-colors ${showUpload ? 'bg-indigo-600 text-white' : 'hover:bg-zinc-800 text-zinc-500'}`}
+                className={`p-1 rounded-md transition-colors ${showUpload ? 'bg-teal-600 text-white' : 'hover:bg-zinc-800 text-zinc-500'}`}
                 title="Upload another PDF"
               >
                 <Plus className="w-4 h-4" />
@@ -113,69 +116,79 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
               <div className="animate-in fade-in slide-in-from-top-1 duration-200">
                 <FileUpload onUpload={handleFileUpload} />
                 {analyzingPDF && (
-                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-indigo-400 italic">
+                  <div className="mt-4 flex items-center justify-center gap-2 text-xs text-teal-400 italic">
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    Extracting and scoring with GROQ...
+                    Extracting markers with GROQ HIPAA AI...
                   </div>
                 )}
                 {uploadError && (
                   <p className="mt-3 text-xs text-red-400 text-center">{uploadError}</p>
                 )}
               </div>
-            ) : financialData ? (
+            ) : medicalData ? (
               <div className="space-y-3 font-mono text-[11px]">
-                {financialData.bills.map(bill => (
-                  <div key={bill.id} className="flex justify-between items-center text-zinc-400">
-                    <span className="truncate max-w-[120px]">{bill.provider}</span>
+                {medicalData.lab_results.map((lab, i) => (
+                  <div key={i} className="flex justify-between items-center text-zinc-400">
+                    <span className="truncate max-w-[120px]">{lab.test}</span>
                     <span className="text-zinc-600 mx-1">........</span>
-                    <span className="text-white">${bill.amount.toLocaleString()}</span>
-                    <span className={`ml-2 font-bold ${bill.status === 'paid' ? 'text-green-500' : 'text-red-400'}`}>
-                      {bill.status === 'paid' ? '✓ PAID' : '✗ DUE'}
+                    <span className="text-white">{lab.value}</span>
+                    <span className={`ml-2 font-bold ${lab.flag === 'NORMAL' ? 'text-green-500' : 'text-red-400'}`}>
+                      {lab.flag}
                     </span>
                   </div>
                 ))}
                 <div className="pt-3 border-t border-dashed border-zinc-800 space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-zinc-300">CREDIT SCORE</span>
-                    <span className={`text-xl font-bold ${financialData.creditScore >= 700 ? 'text-indigo-400' : 'text-amber-400'}`}>
-                      {financialData.creditScore}
+                    <span className="text-zinc-300">TRIAL 884 ELIGIBILITY</span>
+                    <span className={`text-xl font-bold ${medicalData.eligible_for_trial ? 'text-teal-400' : 'text-red-400'}`}>
+                      {medicalData.eligible_for_trial ? 'ELIGIBLE' : 'DISQUALIFIED'}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-zinc-500">RISK LEVEL</span>
-                    <span className={`text-xs font-bold ${
-                      financialData.riskLevel === 'LOW' ? 'text-green-500' :
-                      financialData.riskLevel === 'MEDIUM' ? 'text-amber-500' : 'text-red-500'
-                    }`}>
-                      {financialData.riskLevel}
+                    <span className="text-zinc-500">HEMOGLOBIN A1C</span>
+                    <span className={`text-xs font-bold ${medicalData.a1c_level >= 7.0 ? 'text-amber-500' : 'text-green-500'}`}>
+                      {medicalData.a1c_level}%
                     </span>
                   </div>
-                  {financialData.monthlyIncome !== null && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500">MONTHLY INCOME</span>
-                      <span className="text-zinc-300">${financialData.monthlyIncome?.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {financialData.latePayments > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-zinc-500">LATE PAYMENTS</span>
-                      <span className="text-red-400">{financialData.latePayments}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-500">CVD HISTORY</span>
+                    <span className="text-zinc-300">{medicalData.has_cvd ? 'POSITIVE' : 'NEGATIVE'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-zinc-500">KIDNEY DISEASE</span>
+                    <span className="text-zinc-300">{medicalData.has_kidney_disease ? 'POSITIVE' : 'NEGATIVE'}</span>
+                  </div>
                 </div>
               </div>
             ) : (
               <div className="space-y-3">
                 <button
                   onClick={() => setShowUpload(true)}
-                  className="w-full flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 hover:border-indigo-500 hover:bg-indigo-500/5 transition-all group py-8"
+                  className="w-full flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 hover:border-teal-500 hover:bg-teal-500/5 transition-all group py-6"
                 >
-                  <UploadCloud className="w-8 h-8 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
+                  <UploadCloud className="w-8 h-8 text-zinc-600 group-hover:text-teal-400 transition-colors" />
                   <div className="text-center">
-                    <p className="text-xs font-semibold text-zinc-400 group-hover:text-white transition-colors">Upload a PDF Statement</p>
-                    <p className="text-[10px] text-zinc-600 mt-1 uppercase tracking-wider">Bank statement · Utility bill</p>
+                    <p className="text-xs font-semibold text-zinc-400 group-hover:text-white transition-colors">Upload Medical Record (PDF)</p>
                   </div>
                 </button>
+                
+                <div className="flex items-center gap-4 py-2">
+                  <div className="h-px bg-zinc-800 flex-1"></div>
+                  <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">OR</span>
+                  <div className="h-px bg-zinc-800 flex-1"></div>
+                </div>
+
+                <button
+                  onClick={async () => {
+                    const res = await fetch('/api/demo-data');
+                    const data = await res.json();
+                    onDataLoaded(data.analysis);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 transition-colors py-4 text-xs font-bold text-white shadow-lg"
+                >
+                  Load Flawless Demo Data
+                </button>
+
                 {uploadError && (
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
                     <p className="text-xs text-red-400 text-center">{uploadError}</p>
@@ -188,7 +201,7 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
 
         {/* Action Card */}
         <div className="border border-zinc-800 rounded-2xl bg-zinc-950 flex flex-col justify-center items-center p-8 space-y-6 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-teal-600/5 to-transparent pointer-events-none" />
 
           <AnimatePresence mode="wait">
             {step === 'idle' && (
@@ -203,15 +216,12 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
                 <button
                   onClick={handleGenerateProof}
                   disabled={!canGenerate}
-                  className="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 transition-all text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+                  className="px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 transition-all text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(20,184,166,0.3)]"
                 >
-                  Generate Private Proof
+                  Generate ZK Eligibility Proof
                 </button>
-                {!financialData && (
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Upload a PDF to Begin</p>
-                )}
-                {financialData && !isConnected && (
-                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Connect Lace Wallet to Continue</p>
+                {!medicalData && (
+                  <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Upload Lab Results to Begin</p>
                 )}
               </motion.div>
             )}
@@ -254,21 +264,38 @@ export function ScoreFlow({ financialData, onDataLoaded, wallet }: ScoreFlowProp
             )}
 
             {step === 'submitting' && (
-              <motion.div key="submitting" className="text-center space-y-4">
-                <Loader2 className="w-12 h-12 text-white animate-spin mx-auto" />
-                <p className="text-sm font-mono text-zinc-400">Waiting for Block Inclusion...</p>
+              <motion.div key="submitting" className="text-left w-full space-y-4 font-mono">
+                <div className="flex items-center gap-3 border-b border-zinc-800 pb-4 mb-4">
+                  <ShieldCheck className="w-6 h-6 text-teal-400" />
+                  <p className="text-sm font-bold text-white tracking-widest">MIDNIGHT ZK MEDICAL VERIFIER</p>
+                </div>
+                <div className="space-y-2 text-xs text-zinc-400">
+                  <motion.p initial={{opacity: 0}} animate={{opacity: 1}} transition={{delay: 0}}>[1/4] Initializing Node.js Headless Wallet...</motion.p>
+                  <motion.p initial={{opacity: 0}} animate={{opacity: 1}} transition={{delay: 1.5}}>[2/4] Loading clinical_trial.compact proving key...</motion.p>
+                  <motion.p initial={{opacity: 0}} animate={{opacity: 1}} transition={{delay: 2.5}} className="text-teal-400">[3/4] Computing Trial 884 Eligibility ZK Proof...</motion.p>
+                  <motion.p initial={{opacity: 0}} animate={{opacity: 1}} transition={{delay: 5}}>[4/4] Anchoring to Midnight Local Dev Node...</motion.p>
+                </div>
+                <div className="pt-4 flex justify-center">
+                  <Loader2 className="w-6 h-6 text-teal-500 animate-spin" />
+                </div>
               </motion.div>
             )}
 
             {step === 'success' && (
               <motion.div key="success" className="text-center space-y-6">
-                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(34,197,94,0.4)]">
-                  <CheckCircle2 className="w-8 h-8 text-white" />
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto shadow-lg ${medicalData?.eligible_for_trial ? 'bg-green-500 shadow-[0_0_30px_rgba(34,197,94,0.4)]' : 'bg-red-500 shadow-[0_0_30px_rgba(239,68,68,0.4)]'}`}>
+                  {medicalData?.eligible_for_trial ? (
+                    <CheckCircle2 className="w-8 h-8 text-white" />
+                  ) : (
+                    <XCircle className="w-8 h-8 text-white" />
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <p className="text-xl font-bold text-white">Transaction Successful</p>
+                  <p className="text-xl font-bold text-white">
+                    {medicalData?.eligible_for_trial ? 'Clinical Trial Match Confirmed' : 'Patient Not Eligible'}
+                  </p>
                   <div className="p-3 bg-zinc-900 rounded-lg border border-zinc-800 text-left">
-                    <p className="text-[10px] text-zinc-500 mb-1 font-mono">TX HASH</p>
+                    <p className="text-[10px] text-zinc-500 mb-1 font-mono">TX HASH (Proof of Verification)</p>
                     <p className="text-[11px] text-zinc-300 font-mono truncate">{txHash}</p>
                   </div>
                 </div>

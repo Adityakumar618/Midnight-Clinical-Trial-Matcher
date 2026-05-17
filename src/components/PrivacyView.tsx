@@ -1,12 +1,12 @@
 import { Eye, EyeOff, Lock, Network, FileX } from 'lucide-react';
-import type { FinancialData } from '../types';
+import type { MedicalData } from '../types';
 
 interface PrivacyViewProps {
-  financialData: FinancialData | null;
+  medicalData: MedicalData | null;
 }
 
-export function PrivacyView({ financialData }: PrivacyViewProps) {
-  if (!financialData) {
+export function PrivacyView({ medicalData }: PrivacyViewProps) {
+  if (!medicalData) {
     return (
       <div className="px-6 pb-12 space-y-6">
         <div className="flex items-center gap-4">
@@ -16,13 +16,13 @@ export function PrivacyView({ financialData }: PrivacyViewProps) {
         </div>
         <div className="flex flex-col items-center justify-center py-12 gap-4 rounded-3xl border border-dashed border-zinc-800 bg-zinc-900/10">
           <FileX className="w-8 h-8 text-zinc-700" />
-          <p className="text-xs font-mono text-zinc-500 uppercase tracking-wider">No PDF loaded — upload a statement to preview the privacy split</p>
+          <p className="text-xs font-mono text-zinc-500 uppercase tracking-wider">No Medical Record loaded — upload a PDF to preview the privacy split</p>
         </div>
       </div>
     );
   }
 
-  const scoreStrength = Math.round((financialData.creditScore - 300) / 550 * 10);
+  const confidenceScore = Math.round(medicalData.confidence * 10);
 
   return (
     <div className="px-6 pb-12 space-y-6">
@@ -35,43 +35,46 @@ export function PrivacyView({ financialData }: PrivacyViewProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
         {/* What You See */}
         <div className="space-y-4 group">
-          <div className="flex items-center gap-2 text-indigo-400">
+          <div className="flex items-center gap-2 text-teal-400">
             <Eye className="w-4 h-4" />
-            <h3 className="text-xs font-bold uppercase tracking-wider">What You See (Local)</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider">What You See (Local Device)</h3>
           </div>
           <div className="p-6 rounded-2xl border border-zinc-800 bg-zinc-900/20 group-hover:bg-zinc-900/40 transition-colors space-y-4">
             <div className="flex justify-between items-end">
               <div>
-                <p className="text-[10px] text-zinc-500 uppercase mb-1">Score Strength</p>
+                <p className="text-[10px] text-zinc-500 uppercase mb-1">AI Match Confidence</p>
                 <div className="flex gap-1 h-3">
                   {Array.from({ length: 10 }).map((_, i) => (
                     <div
                       key={i}
-                      className={`w-1.5 h-full rounded-full ${i < scoreStrength ? 'bg-indigo-500/70' : 'bg-zinc-800'}`}
+                      className={`w-1.5 h-full rounded-full ${i < confidenceScore ? 'bg-teal-500/70' : 'bg-zinc-800'}`}
                     />
                   ))}
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-zinc-500 uppercase mb-1">Raw Score</p>
-                <p className="text-lg font-bold text-white tabular-nums">{financialData.creditScore}</p>
+                <p className="text-[10px] text-zinc-500 uppercase mb-1">Status</p>
+                <p className="text-lg font-bold text-white tabular-nums">{medicalData.eligible_for_trial ? 'ELIGIBLE' : 'DISQUALIFIED'}</p>
               </div>
             </div>
             <div className="p-4 rounded-xl bg-black/40 border border-zinc-500/10 space-y-2">
-              <p className="text-[10px] text-zinc-500 font-mono"># STATEMENT_DATA</p>
-              <p className="text-[11px] text-zinc-300 font-mono">BILLS: {financialData.bills.length} Records</p>
+              <p className="text-[10px] text-zinc-500 font-mono"># EXTRACTED_MEDICAL_DATA</p>
+              <p className="text-[11px] text-zinc-300 font-mono">LABS: {medicalData.lab_results.length} Records</p>
               <p className="text-[11px] text-zinc-300 font-mono">
-                EXPENSES: ${financialData.monthlyExpenses.toLocaleString()}
+                HEMOGLOBIN A1C: {medicalData.a1c_level}%
               </p>
               <p className="text-[11px] font-mono">
-                <span className="text-zinc-300">STATUS: </span>
-                <span className={financialData.riskLevel === 'LOW' ? 'text-green-400' : financialData.riskLevel === 'MEDIUM' ? 'text-amber-400' : 'text-red-400'}>
-                  {financialData.riskLevel} RISK
+                <span className="text-zinc-300">CVD_HISTORY: </span>
+                <span className={medicalData.has_cvd ? 'text-red-400' : 'text-green-400'}>
+                  {medicalData.has_cvd ? 'POSITIVE' : 'NEGATIVE'}
                 </span>
               </p>
-              {financialData.latePayments > 0 && (
-                <p className="text-[11px] text-red-400 font-mono">LATE PAYMENTS: {financialData.latePayments}</p>
-              )}
+              <p className="text-[11px] font-mono">
+                <span className="text-zinc-300">KIDNEY_DISEASE: </span>
+                <span className={medicalData.has_kidney_disease ? 'text-red-400' : 'text-green-400'}>
+                  {medicalData.has_kidney_disease ? 'POSITIVE' : 'NEGATIVE'}
+                </span>
+              </p>
             </div>
           </div>
         </div>
@@ -80,9 +83,9 @@ export function PrivacyView({ financialData }: PrivacyViewProps) {
         <div className="space-y-4 group">
           <div className="flex items-center gap-2 text-zinc-500">
             <EyeOff className="w-4 h-4" />
-            <h3 className="text-xs font-bold uppercase tracking-wider">What Blockchain Sees (Network)</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider">What Blockchain Sees (Midnight Node)</h3>
           </div>
-          <div className="p-6 rounded-2xl border border-zinc-800 bg-indigo-950/20 border-indigo-500/20 group-hover:bg-indigo-950/30 transition-colors space-y-4 relative overflow-hidden">
+          <div className="p-6 rounded-2xl border border-zinc-800 bg-teal-950/20 border-teal-500/20 group-hover:bg-teal-950/30 transition-colors space-y-4 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-3 opacity-20 group-hover:opacity-40 transition-opacity">
               <Lock className="w-12 h-12" />
             </div>
@@ -91,19 +94,19 @@ export function PrivacyView({ financialData }: PrivacyViewProps) {
                 <p className="text-[10px] text-zinc-500 uppercase mb-1">Encrypted Payload</p>
                 <div className="flex gap-1 h-3">
                   {Array.from({ length: 10 }).map((_, i) => (
-                    <div key={i} className="w-1.5 h-full rounded-full bg-indigo-400/40" />
+                    <div key={i} className="w-1.5 h-full rounded-full bg-teal-400/40" />
                   ))}
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-indigo-400/60 uppercase mb-1 font-bold">Score Check</p>
-                <p className={`text-lg font-bold underline underline-offset-4 decoration-dotted ${financialData.creditScore >= 700 ? 'text-indigo-400' : 'text-amber-400'}`}>
-                  {financialData.creditScore >= 700 ? 'PASS' : 'FAIL'}
+                <p className="text-[10px] text-teal-400/60 uppercase mb-1 font-bold">Trial 884 Eligibility Check</p>
+                <p className={`text-lg font-bold underline underline-offset-4 decoration-dotted ${medicalData.eligible_for_trial ? 'text-teal-400' : 'text-amber-400'}`}>
+                  {medicalData.eligible_for_trial ? 'PASS' : 'FAIL'}
                 </p>
               </div>
             </div>
             <div className="p-4 rounded-xl bg-black/40 border border-zinc-500/10 font-mono overflow-hidden">
-              <p className="text-[10px] text-indigo-500/50 mb-2"># ZK_PROOF_BLOB</p>
+              <p className="text-[10px] text-teal-500/50 mb-2"># ZK_PROOF_BLOB</p>
               <div className="grid grid-cols-4 gap-1 opacity-40">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} className="h-2 bg-zinc-800 rounded-sm" />
@@ -120,7 +123,7 @@ export function PrivacyView({ financialData }: PrivacyViewProps) {
       <div className="flex flex-col items-center justify-center py-8 text-center bg-zinc-900/20 rounded-3xl border border-dashed border-zinc-800">
         <Network className="w-8 h-8 text-zinc-700 mb-4" />
         <p className="text-xs font-mono text-zinc-500 max-w-xs uppercase leading-relaxed">
-          Data is processed within the <span className="text-indigo-400 font-bold">Compact Runtime</span>.
+          Data is processed within the <span className="text-teal-400 font-bold">clinical_trial.compact</span> Runtime.
           Zero Knowledge Proof is transmitted as a witness without exposing scalars.
         </p>
       </div>
