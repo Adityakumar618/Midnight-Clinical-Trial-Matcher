@@ -166,6 +166,23 @@ Return JSON: {
     }
   });
 
+  app.post("/api/run-cron", async (req, res) => {
+    try {
+      // Placeholder endpoint for later cron integration.
+      // Cron jobs can invoke this endpoint to execute the same task.
+      const taskName = req.body?.taskName ?? "default";
+      res.json({
+        success: true,
+        task: taskName,
+        message: "Cron endpoint reached successfully.",
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error("Cron endpoint error:", error);
+      res.status(500).json({ error: "Failed to invoke cron endpoint" });
+    }
+  });
+
   app.get("/api/demo-data", (req, res) => {
     res.json({
       analysis: {
